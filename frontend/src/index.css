@@ -1,0 +1,75 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Design tokens ──────────────────────────────────────────────
+   Editorial "reading room": warm paper + ink, a single burnt-amber
+   accent. Dark mode swaps the variables; semantic Tailwind tokens
+   (bg/surface/ink/accent…) pick them up automatically.            */
+:root {
+  --bg: 247 244 237;
+  --surface: 255 253 249;
+  --surface-2: 240 236 227;
+  --border: 226 220 208;
+  --text: 28 25 23;
+  --text-muted: 120 113 108;
+  --accent: 180 83 9;
+  --accent-fg: 255 251 245;
+  --accent-soft: 250 240 224;
+}
+
+.dark {
+  --bg: 22 20 17;
+  --surface: 30 27 23;
+  --surface-2: 41 37 31;
+  --border: 56 50 43;
+  --text: 240 236 228;
+  --text-muted: 165 159 149;
+  --accent: 230 145 40;
+  --accent-fg: 24 20 15;
+  --accent-soft: 52 41 25;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+@layer base {
+  body {
+    @apply bg-bg font-sans text-ink antialiased;
+    /* faint two-point glow for atmosphere */
+    background-image:
+      radial-gradient(60rem 60rem at 110% -10%, rgb(var(--accent) / 0.06), transparent 60%),
+      radial-gradient(50rem 50rem at -10% 110%, rgb(var(--accent) / 0.05), transparent 55%);
+    background-attachment: fixed;
+  }
+
+  h1, h2, h3 {
+    @apply font-display;
+  }
+
+  ::selection {
+    background: rgb(var(--accent) / 0.25);
+  }
+}
+
+@layer components {
+  /* Custom thin scrollbar that respects the theme */
+  .scroll-slim {
+    scrollbar-width: thin;
+    scrollbar-color: rgb(var(--border)) transparent;
+  }
+  .scroll-slim::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  .scroll-slim::-webkit-scrollbar-thumb {
+    background: rgb(var(--border));
+    border-radius: 9999px;
+  }
+  .scroll-slim::-webkit-scrollbar-track {
+    background: transparent;
+  }
+}

@@ -1,0 +1,110 @@
+// Prisma schema — RAG document Q&A
+// Note: the `Chunk.embedding` column is a pgvector type, which Prisma cannot
+// query natively. It is declared as `Unsupported` so migrations know it exists;
+// all reads/writes of embeddings go through raw SQL (see src/db/vectorSearch.ts
+// and the documents service). Vector similarity search uses the `<=>` operator.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String         @id @default(cuid())
+  email         String         @unique
+  passwordHash  String
+  createdAt     DateTime       @default(now())
+
+  documents     Document[]
+  conversations Conversation[]
+}
+
+model Document {
+  id         String   @id @default(cuid())
+  userId     String
+  title      String
+  sourceType String // "PDF" | "URL"
+  sourceRef  String // Cloudinary URL (PDF) or original URL
+  storageKey String? // Cloudinary public_id (PDFs only) — used to delete the asset
+  status     String   @default("PROCESSING") // "PROCESSING" | "READY" | "FAILED"
+  error      String?
+  createdAt  DateTime @default(now())
+
+  user                  User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  chunks                Chunk[]
+  conversationDocuments ConversationDocument[]
+
+  @@index([userId])
+}
+
+model Chunk {
+  id         String  @id @default(cuid())
+  documentId String
+  content    String
+  chunkIndex Int
+  tokenCount Int
+  // pgvector column — managed via raw SQL only.
+  embedding  Unsupported("vector(768)")?
+  createdAt  DateTime @default(now())
+
+  document  Document          @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  citations MessageCitation[]
+
+  @@index([documentId])
+}
+
+model Conversation {
+  id        String   @id @default(cuid())
+  userId    String
+  title     String
+  createdAt DateTime @default(now())
+
+  user                  User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages              Message[]
+  conversationDocuments ConversationDocument[]
+
+  @@index([userId])
+}
+
+model ConversationDocument {
+  conversationId String
+  documentId     String
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  document     Document     @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@id([conversationId, documentId])
+  @@index([documentId])
+}
+
+model Message {
+  id             String   @id @default(cuid())
+  conversationId String
+  role           String // "USER" | "ASSISTANT"
+  content        String
+  modelUsed      String? // "gemini" | "groq"
+  createdAt      DateTime @default(now())
+
+  conversation Conversation      @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  citations    MessageCitation[]
+
+  @@index([conversationId])
+}
+
+model MessageCitation {
+  id         String   @id @default(cuid())
+  messageId  String
+  chunkId    String
+  documentId String
+  order      Int      @default(0) // retrieval rank, matches [n] markers in the answer
+  createdAt  DateTime @default(now())
+
+  message Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  chunk   Chunk   @relation(fields: [chunkId], references: [id], onDelete: Cascade)
+
+  @@index([messageId])
+}
