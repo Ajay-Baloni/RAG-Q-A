@@ -19,6 +19,10 @@ const envSchema = z.object({
   CLOUDINARY_CLOUD_NAME: z.string().min(1),
   CLOUDINARY_API_KEY: z.string().min(1),
   CLOUDINARY_API_SECRET: z.string().min(1),
+
+  // Email (password reset). Optional: if unset, reset links are logged instead of sent.
+  RESEND_API_KEY: z.string().optional(),
+  EMAIL_FROM: z.string().default('Lexica <onboarding@resend.dev>'),
 });
 
 const parsed = envSchema.safeParse(process.env);
@@ -34,3 +38,6 @@ export const env = parsed.data;
 
 /** Allowed CORS origins, parsed from the comma-separated CLIENT_ORIGIN. */
 export const allowedOrigins = env.CLIENT_ORIGIN.split(',').map((o) => o.trim());
+
+/** Public base URL of the frontend (used to build password-reset links). */
+export const appUrl = allowedOrigins[0] ?? 'http://localhost:5173';

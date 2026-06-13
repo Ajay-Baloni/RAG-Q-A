@@ -39,7 +39,19 @@ You need four accounts. None require a credit card. Collect each value into `bac
 
 ---
 
-## 5. App secrets
+## 5. Resend (password-reset emails)
+
+Needed only for the **forgot-password** flow. If you skip it, reset links are printed to the backend console instead of emailed (fine for local testing); change-password works without it.
+
+1. Go to https://resend.com and sign up.
+2. **API Keys** → **Create API Key**. Copy it into `.env` as `RESEND_API_KEY`.
+3. Leave `EMAIL_FROM=Lexica <onboarding@resend.dev>` to start.
+
+Free tier: 3,000 emails/month, 100/day. Without a verified domain, Resend's test mode only delivers to the email you signed up with — verify a domain later to send to anyone.
+
+---
+
+## 6. App secrets
 
 - `JWT_SECRET` — any long random string. Generate one:
   ```bash

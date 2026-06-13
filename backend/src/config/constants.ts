@@ -1,14 +1,13 @@
 /**
  * Embedding model + dimensionality. gemini-embedding-001 defaults to 3072 dims;
  * we request 768 (`outputDimensionality`) to match the `vector(768)` DB column.
- * (text-embedding-004 is no longer served on the current v1beta API.)
  */
-export const EMBEDDING_MODEL = 'gemini-embedding-001';
+export const EMBEDDING_MODEL = "gemini-embedding-001";
 export const EMBEDDING_DIMENSIONS = 768;
 
-/** LLMs. (gemini-1.5-flash and Groq's llama3-8b-8192 are retired on current APIs.) */
-export const GEMINI_MODEL = 'gemini-2.0-flash';
-export const GROQ_MODEL = 'llama-3.1-8b-instant';
+/** LLMs. */
+export const GEMINI_MODEL = "gemini-2.0-flash";
+export const GROQ_MODEL = "llama-3.1-8b-instant";
 
 /** Chunking: ~500 token chunks with ~50 token overlap. */
 export const CHUNK_SIZE_TOKENS = 500;

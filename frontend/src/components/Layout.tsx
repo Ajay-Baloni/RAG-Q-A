@@ -1,10 +1,10 @@
-import { Link, Outlet } from 'react-router-dom';
+import { Link, NavLink, Outlet } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Button } from './ui/Button';
 import { ThemeToggle } from './ui/ThemeToggle';
 
 export function Layout() {
-  const { user, logout } = useAuth();
+  const { logout } = useAuth();
 
   return (
     <div className="flex h-full flex-col">
@@ -22,9 +22,20 @@ export function Layout() {
             </span>
           </Link>
           <div className="flex items-center gap-2">
-            <span className="mr-1 hidden font-mono text-xs text-muted sm:inline">
-              {user?.email}
-            </span>
+            <NavLink
+              to="/account"
+              title="Account settings"
+              className={({ isActive }) =>
+                `grid h-9 w-9 place-items-center rounded-lg border border-line transition hover:bg-surface-2 ${
+                  isActive ? 'text-accent' : 'text-muted hover:text-ink'
+                }`
+              }
+            >
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="8" r="4" />
+                <path d="M4 21a8 8 0 0 1 16 0" />
+              </svg>
+            </NavLink>
             <ThemeToggle />
             <Button variant="secondary" onClick={logout}>
               Log out
