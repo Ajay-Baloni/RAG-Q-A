@@ -7,7 +7,7 @@ import { Input } from '../components/ui/Input';
 import { ApiError } from '../lib/apiClient';
 
 export function LoginPage() {
-  const { user, login } = useAuth();
+  const { user, loading: authLoading, login } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const justReset = (location.state as { reset?: boolean } | null)?.reset === true;
@@ -16,7 +16,7 @@ export function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  if (user) return <Navigate to="/" replace />;
+  if (authLoading || user) return <Navigate to="/" replace />;
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();

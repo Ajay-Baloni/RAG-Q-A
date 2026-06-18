@@ -1,16 +1,21 @@
-import { apiFetch, ApiError, getToken } from '../lib/apiClient';
-import { API_URL } from '../lib/constants';
-import type { Conversation, ConversationSummary, RetrievedSource } from '../types';
+import { apiFetch, ApiError, getToken } from "../lib/apiClient";
+import { API_URL } from "../lib/constants";
+import type {
+  Conversation,
+  ConversationSummary,
+  RetrievedSource,
+} from "../types";
 
 export function createConversation(documentIds: string[], title?: string) {
-  return apiFetch<{ conversation: ConversationSummary & { documentIds: string[] } }>(
-    '/api/conversations',
-    { method: 'POST', body: { documentIds, title } }
-  );
+  return apiFetch<{
+    conversation: ConversationSummary & { documentIds: string[] };
+  }>("/api/conversations", { method: "POST", body: { documentIds, title } });
 }
 
 export function listConversations() {
-  return apiFetch<{ conversations: ConversationSummary[] }>('/api/conversations');
+  return apiFetch<{ conversations: ConversationSummary[] }>(
+    "/api/conversations",
+  );
 }
 
 export function getConversation(id: string) {
@@ -18,7 +23,7 @@ export function getConversation(id: string) {
 }
 
 export function deleteConversation(id: string) {
-  return apiFetch<void>(`/api/conversations/${id}`, { method: 'DELETE' });
+  return apiFetch<void>(`/api/conversations/${id}`, { method: "DELETE" });
 }
 
 export interface StreamHandlers {
@@ -35,25 +40,28 @@ export interface StreamHandlers {
 export async function streamQuestion(
   conversationId: string,
   question: string,
-  handlers: StreamHandlers
+  handlers: StreamHandlers,
 ): Promise<void> {
-  const res = await fetch(`${API_URL}/api/conversations/${conversationId}/messages`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${getToken() ?? ''}`,
+  const res = await fetch(
+    `${API_URL}/api/conversations/${conversationId}/messages`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${getToken() ?? ""}`,
+      },
+      body: JSON.stringify({ question }),
     },
-    body: JSON.stringify({ question }),
-  });
+  );
 
   if (!res.ok || !res.body) {
     const data = (await res.json().catch(() => ({}))) as { error?: string };
-    throw new ApiError(res.status, data.error ?? 'Request failed');
+    throw new ApiError(res.status, data.error ?? "Request failed");
   }
 
   const reader = res.body.getReader();
   const decoder = new TextDecoder();
-  let buffer = '';
+  let buffer = "";
 
   // eslint-disable-next-line no-constant-condition
   while (true) {
@@ -62,7 +70,7 @@ export async function streamQuestion(
     buffer += decoder.decode(value, { stream: true });
 
     let boundary: number;
-    while ((boundary = buffer.indexOf('\n\n')) !== -1) {
+    while ((boundary = buffer.indexOf("\n\n")) !== -1) {
       const rawEvent = buffer.slice(0, boundary);
       buffer = buffer.slice(boundary + 2);
       dispatchEvent(rawEvent, handlers);
@@ -71,26 +79,26 @@ export async function streamQuestion(
 }
 
 function dispatchEvent(raw: string, handlers: StreamHandlers) {
-  let event = 'message';
-  let data = '';
-  for (const line of raw.split('\n')) {
-    if (line.startsWith('event:')) event = line.slice(6).trim();
-    else if (line.startsWith('data:')) data += line.slice(5).trim();
+  let event = "message";
+  let data = "";
+  for (const line of raw.split("\n")) {
+    if (line.startsWith("event:")) event = line.slice(6).trim();
+    else if (line.startsWith("data:")) data += line.slice(5).trim();
   }
   if (!data) return;
 
   const payload = JSON.parse(data);
   switch (event) {
-    case 'sources':
+    case "sources":
       handlers.onSources(payload.sources as RetrievedSource[]);
       break;
-    case 'token':
+    case "token":
       handlers.onToken(payload.text as string);
       break;
-    case 'done':
+    case "done":
       handlers.onDone(payload as { messageId: string; model: string });
       break;
-    case 'error':
+    case "error":
       handlers.onError(payload.message as string);
       break;
   }

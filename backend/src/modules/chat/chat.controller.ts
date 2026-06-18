@@ -1,10 +1,10 @@
-import type { Request, Response } from 'express';
-import { z } from 'zod';
-import * as chatService from './chat.service';
-import { logger } from '../../utils/logger';
+import type { Request, Response } from "express";
+import { z } from "zod";
+import * as chatService from "./chat.service";
+import { logger } from "../../utils/logger";
 
 const askSchema = z.object({
-  question: z.string().min(1, 'Question must not be empty').max(4000),
+  question: z.string().min(1, "Question must not be empty").max(4000),
 });
 
 /**
@@ -22,10 +22,10 @@ export async function ask(req: Request, res: Response) {
   const userId = req.user!.id;
   const conversationId = req.params.id!;
 
-  res.setHeader('Content-Type', 'text/event-stream');
-  res.setHeader('Cache-Control', 'no-cache, no-transform');
-  res.setHeader('Connection', 'keep-alive');
-  res.setHeader('X-Accel-Buffering', 'no'); // disable proxy buffering (nginx/Render)
+  res.setHeader("Content-Type", "text/event-stream");
+  res.setHeader("Cache-Control", "no-cache, no-transform");
+  res.setHeader("Connection", "keep-alive");
+  res.setHeader("X-Accel-Buffering", "no"); // disable proxy buffering (nginx/Render)
   res.flushHeaders?.();
 
   const send = (event: string, data: unknown) => {
@@ -33,16 +33,22 @@ export async function ask(req: Request, res: Response) {
   };
 
   try {
-    const result = await chatService.askStream(userId, conversationId, question, {
-      onSources: (sources) => send('sources', { sources }),
-      onToken: (text) => send('token', { text }),
-    });
-    send('done', result);
+    const result = await chatService.askStream(
+      userId,
+      conversationId,
+      question,
+      {
+        onSources: (sources) => send("sources", { sources }),
+        onToken: (text) => send("token", { text }),
+      },
+    );
+    send("done", result);
   } catch (err) {
-    const message = err instanceof Error ? err.message : 'Failed to generate answer';
-    logger.error('Streaming chat failed', { conversationId, message });
+    const message =
+      err instanceof Error ? err.message : "Failed to generate answer";
+    logger.error("Streaming chat failed", { conversationId, message });
     // If headers/body already started, we can only emit an SSE error event.
-    send('error', { message });
+    send("error", { message });
   } finally {
     res.end();
   }

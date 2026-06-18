@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import * as authApi from '../api/auth';
-import { setToken } from '../lib/apiClient';
+import { setToken, ApiError } from '../lib/apiClient';
 import { getToken } from '../lib/apiClient';
 import type { User } from '../types';
 
@@ -28,7 +28,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     authApi
       .fetchMe()
       .then((res) => setUser(res.user))
-      .catch(() => setToken(null))
+      .catch((err) => {
+        if (err instanceof ApiError && err.status === 401) setToken(null);
+      })
       .finally(() => setLoading(false));
   }, []);
 
