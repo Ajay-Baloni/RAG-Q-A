@@ -2,8 +2,6 @@
 
 Upload PDFs or paste URLs, then ask questions and get streamed, source-cited answers powered by retrieval-augmented generation (RAG).
 
-Built to run entirely on **free tiers**.
-
 ## Stack
 
 | Layer        | Tech                                                       |
@@ -26,7 +24,7 @@ docs/      Setup guide + design spec
 
 ## Quick start
 
-1. Follow **[docs/SETUP.md](docs/SETUP.md)** to create the four free-tier accounts and collect API keys.
+1. Follow **[docs/SETUP.md](docs/SETUP.md)** to create accounts and collect API keys.
 2. Backend:
    ```bash
    cd backend

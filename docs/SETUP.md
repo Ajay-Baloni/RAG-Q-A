@@ -1,9 +1,3 @@
-# Setup Guide — Accounts & Keys
-
-You need four accounts. None require a credit card. Collect each value into `backend/.env` (copy from `backend/.env.example`).
-
----
-
 ## 1. Neon (PostgreSQL + pgvector) — free
 
 1. Go to https://neon.tech and sign up (GitHub login is easiest).
@@ -77,5 +71,3 @@ CLOUDINARY_API_SECRET=...
 ```
 VITE_API_URL=http://localhost:4000
 ```
-
-Then run the migrations and start both apps (see the root README).

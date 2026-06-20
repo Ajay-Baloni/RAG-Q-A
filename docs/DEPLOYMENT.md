@@ -16,9 +16,6 @@
    tables + pgvector extension automatically. Note the service URL, e.g.
    `https://ai-document-qa-backend.onrender.com`.
 
-> Free Render services sleep after 15 min idle; the first request after sleeping
-> takes ~30s to wake.
-
 ## 2. Frontend on Vercel
 
 1. https://vercel.com → **Add New** → **Project** → import the repo.

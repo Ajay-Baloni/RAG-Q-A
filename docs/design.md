@@ -9,7 +9,7 @@ citations. Must run entirely on free tiers.
 ## Architecture (Option A: monolith + synchronous processing)
 
 ```
-┌────────────┐      REST + (SSE in Phase 2)      ┌──────────────────────────┐
+┌────────────┐      REST + SSE      ┌──────────────────────────┐
 │  Frontend  │  ───────────────────────────────▶ │  Backend (Express, TS)   │
 │ React+Vite │  ◀─────────────────────────────── │                          │
 │  (Vercel)  │         JSON / event-stream        │  auth · documents · chat │
@@ -24,10 +24,9 @@ citations. Must run entirely on free tiers.
                                           └───────────────────────┘ └─────────────────┘
 ```
 
-- **One Express service** handles auth, document processing, and chat. Fits Render's
-  single free service; SSE streaming (Phase 2) works natively, unlike serverless.
+- **One Express service** handles auth, document processing, and chat. SSE streaming works natively.
 - **Auth:** JWT as a Bearer token in `localStorage` (frontend and backend live on
-  different domains, so cross-site cookies are avoided). 30-day token = "remember me".
+  different domains, so cross-site cookies are avoided).
 - **DB access:** Prisma for all modeling/CRUD; **raw SQL via `$queryRaw`** only for the
   pgvector cosine search and embedding inserts (the `embedding` column is a
   `vector(768)` type Prisma can't query natively).
