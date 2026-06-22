@@ -24,11 +24,27 @@ export interface Citation {
   chunk?: { content: string; chunkIndex: number };
 }
 
+export interface MessageStep {
+  order: number;
+  tool: string;
+  input: string;
+  outputSummary: string;
+}
+
+export interface Usage {
+  promptTokens: number;
+  completionTokens: number;
+  totalTokens: number;
+}
+
 export interface Message {
   id: string;
   role: 'USER' | 'ASSISTANT';
   content: string;
   modelUsed?: string | null;
+  promptTokens?: number | null;
+  completionTokens?: number | null;
+  steps?: MessageStep[];
   createdAt: string;
   citations?: Citation[];
 }

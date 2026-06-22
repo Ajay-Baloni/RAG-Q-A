@@ -8,6 +8,7 @@ import {
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { MessageBubble } from "../components/chat/MessageBubble";
 import { CitationList } from "../components/chat/CitationList";
+import { AgentSteps } from "../components/chat/AgentSteps";
 import { ConversationSidebar } from "../components/chat/ConversationSidebar";
 import { Button } from "../components/ui/Button";
 import { Spinner } from "../components/ui/Spinner";
@@ -45,7 +46,6 @@ export function ChatPage() {
   const { id = "" } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
-  console.log("location.state", location.state);
   const state = location.state as {
     documentIds?: string[];
     skipLoad?: boolean;
@@ -54,15 +54,18 @@ export function ChatPage() {
 
   const [conversations, setConversations] = useState<ConversationSummary[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
-  useEffect(() => {
-    console.log("messages", messages);
-  }, [messages]);
   const [question, setQuestion] = useState("");
   const [loading, setLoading] = useState(!isDraft);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hovered, setHovered] = useState<HoverState | null>(null);
+  const [tools, setTools] = useState<string[]>([]);
   const bottomRef = useRef<HTMLDivElement>(null);
+
+  const toggleTool = (name: string) =>
+    setTools((prev) =>
+      prev.includes(name) ? prev.filter((t) => t !== name) : [...prev, name],
+    );
 
   const refreshConversations = useCallback(() => {
     listConversations()
@@ -118,7 +121,6 @@ export function ChatPage() {
   }
 
   async function onSubmit(e: FormEvent) {
-    debugger;
     e.preventDefault();
     const q = question.trim();
     if (!q || sending) return;
@@ -139,6 +141,7 @@ export function ChatPage() {
       role: "ASSISTANT",
       content: "",
       citations: [],
+      steps: [],
       createdAt: new Date().toISOString(),
     };
     setMessages((prev) => [...prev, userMsg, assistantMsg]);
@@ -158,11 +161,31 @@ export function ChatPage() {
         });
       }
 
-      await streamQuestion(targetId, q, {
+      await streamQuestion(targetId, q, tools, {
         onSources: (sources) =>
           patch(assistantId, (m) => ({
             ...m,
             citations: sourcesToCitations(sources),
+          })),
+        onStep: (step) =>
+          patch(assistantId, (m) => ({
+            ...m,
+            steps: [
+              ...(m.steps ?? []),
+              {
+                order: step.order,
+                tool: step.tool,
+                input: JSON.stringify(step.input),
+                outputSummary: "",
+              },
+            ],
+          })),
+        onToolResult: (order, summary) =>
+          patch(assistantId, (m) => ({
+            ...m,
+            steps: (m.steps ?? []).map((s) =>
+              s.order === order ? { ...s, outputSummary: summary } : s,
+            ),
           })),
         onToken: (text) =>
           patch(assistantId, (m) => ({ ...m, content: m.content + text })),
@@ -171,6 +194,8 @@ export function ChatPage() {
             ...m,
             id: res.messageId,
             modelUsed: res.model,
+            promptTokens: res.usage.promptTokens,
+            completionTokens: res.usage.completionTokens,
           }));
           refreshConversations();
         },
@@ -224,6 +249,9 @@ export function ChatPage() {
                 setHovered(order === null ? null : { messageId: m.id, order });
               return (
                 <div key={m.id} className="space-y-1.5">
+                  {m.role === "ASSISTANT" && m.steps && m.steps.length > 0 && (
+                    <AgentSteps steps={m.steps} />
+                  )}
                   <MessageBubble
                     message={m}
                     activeOrder={activeOrder}
@@ -243,6 +271,15 @@ export function ChatPage() {
                         onHover={onHover}
                       />
                     )}
+                  {m.role === "ASSISTANT" &&
+                    typeof m.promptTokens === "number" &&
+                    typeof m.completionTokens === "number" && (
+                      <p className="px-2 text-xs text-muted">
+                        {(m.promptTokens + m.completionTokens).toLocaleString()}{" "}
+                        tokens
+                        {m.modelUsed ? ` · ${m.modelUsed}` : ""}
+                      </p>
+                    )}
                 </div>
               );
             })}
@@ -256,19 +293,44 @@ export function ChatPage() {
           </p>
         )}
 
-        <form
-          onSubmit={onSubmit}
-          className="flex gap-2 border-t border-line p-3"
-        >
-          <input
-            value={question}
-            onChange={(e) => setQuestion(e.target.value)}
-            placeholder="Ask a question…"
-            className="flex-1 rounded-lg border border-line bg-surface px-4 py-2.5 text-sm text-ink placeholder:text-muted/70 outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/20"
-          />
-          <Button type="submit" loading={sending} disabled={!question.trim()}>
-            Send
-          </Button>
+        <form onSubmit={onSubmit} className="border-t border-line p-3">
+          <div className="mb-2 flex items-center gap-2">
+            <span className="text-xs text-muted">Tools:</span>
+            {[
+              { id: "web_search", label: "🌐 Web search" },
+              { id: "calculator", label: "🧮 Calculator" },
+            ].map((t) => {
+              const active = tools.includes(t.id);
+              return (
+                <button
+                  key={t.id}
+                  type="button"
+                  onClick={() => toggleTool(t.id)}
+                  className={`rounded-full border px-2.5 py-1 text-xs transition ${
+                    active
+                      ? "border-accent bg-accent-soft text-accent"
+                      : "border-line text-muted hover:border-accent/50"
+                  }`}
+                >
+                  {t.label}
+                </button>
+              );
+            })}
+            <span className="ml-auto text-[11px] text-muted/70">
+              {tools.length === 0 ? "Answering from your documents" : "Agent mode"}
+            </span>
+          </div>
+          <div className="flex gap-2">
+            <input
+              value={question}
+              onChange={(e) => setQuestion(e.target.value)}
+              placeholder="Ask a question…"
+              className="flex-1 rounded-lg border border-line bg-surface px-4 py-2.5 text-sm text-ink placeholder:text-muted/70 outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/20"
+            />
+            <Button type="submit" loading={sending} disabled={!question.trim()}>
+              Send
+            </Button>
+          </div>
         </form>
       </div>
     </div>

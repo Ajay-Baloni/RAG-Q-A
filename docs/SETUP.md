@@ -33,7 +33,18 @@
 
 ---
 
-## 5. Resend (password-reset emails)
+## 5. Tavily (web search agent tool) — free, optional
+
+Powers the agent's `web_search` tool (used when your documents don't contain the answer). Optional: if you skip it, the tool is disabled and the agent just answers from documents + calculator.
+
+1. Go to https://tavily.com and sign up.
+2. Copy your API key from the dashboard into `.env` as `TAVILY_API_KEY`.
+
+Free tier: 1,000 searches/month.
+
+---
+
+## 6. Resend (password-reset emails)
 
 Needed only for the **forgot-password** flow. If you skip it, reset links are printed to the backend console instead of emailed (fine for local testing); change-password works without it.
 
@@ -45,7 +56,7 @@ Free tier: 3,000 emails/month, 100/day. Without a verified domain, Resend's test
 
 ---
 
-## 6. App secrets
+## 7. App secrets
 
 - `JWT_SECRET` — any long random string. Generate one:
   ```bash
@@ -61,6 +72,7 @@ DATABASE_URL=...
 JWT_SECRET=...
 GEMINI_API_KEY=...
 GROQ_API_KEY=...
+TAVILY_API_KEY=...   # optional (web_search tool)
 CLOUDINARY_CLOUD_NAME=...
 CLOUDINARY_API_KEY=...
 CLOUDINARY_API_SECRET=...

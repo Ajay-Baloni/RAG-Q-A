@@ -16,6 +16,9 @@ const envSchema = z.object({
   GEMINI_API_KEY: z.string().min(1),
   GROQ_API_KEY: z.string().min(1),
 
+  // Web search (agentic tool). Optional: if unset, the web_search tool is a no-op.
+  TAVILY_API_KEY: z.string().optional(),
+
   CLOUDINARY_CLOUD_NAME: z.string().min(1),
   CLOUDINARY_API_KEY: z.string().min(1),
   CLOUDINARY_API_SECRET: z.string().min(1),

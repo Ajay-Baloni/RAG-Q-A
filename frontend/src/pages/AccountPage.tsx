@@ -1,9 +1,10 @@
-import { useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { changePassword } from '../api/auth';
+import { getUsage, type UsageSummary } from '../api/usage';
 import { ApiError } from '../lib/apiClient';
 
 export function AccountPage() {
@@ -14,6 +15,13 @@ export function AccountPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
+  const [usage, setUsage] = useState<UsageSummary | null>(null);
+
+  useEffect(() => {
+    getUsage()
+      .then((res) => setUsage(res.usage))
+      .catch(() => undefined);
+  }, []);
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
@@ -93,6 +101,66 @@ export function AccountPage() {
           </Button>
         </form>
       </section>
+
+      <section className="rounded-2xl border border-line bg-surface p-6 shadow-soft">
+        <h2 className="font-display text-lg font-semibold text-ink">Usage</h2>
+        <p className="mt-1 text-sm text-muted">
+          Token usage across your conversations.
+        </p>
+        {!usage ? (
+          <p className="mt-4 text-sm text-muted">Loading…</p>
+        ) : (
+          <div className="mt-4 space-y-4">
+            <div className="grid grid-cols-3 gap-3">
+              <Stat
+                label="Total tokens"
+                value={usage.totals.totalTokens.toLocaleString()}
+              />
+              <Stat
+                label="Input"
+                value={usage.totals.promptTokens.toLocaleString()}
+              />
+              <Stat
+                label="Answers"
+                value={usage.totals.messages.toLocaleString()}
+              />
+            </div>
+            {usage.byModel.length > 0 && (
+              <table className="w-full text-left text-sm">
+                <thead className="text-muted">
+                  <tr>
+                    <th className="py-1 font-medium">Model</th>
+                    <th className="py-1 font-medium">Input</th>
+                    <th className="py-1 font-medium">Output</th>
+                    <th className="py-1 font-medium">Total</th>
+                  </tr>
+                </thead>
+                <tbody className="text-ink">
+                  {usage.byModel.map((m) => (
+                    <tr key={m.model} className="border-t border-line">
+                      <td className="py-1 font-mono">{m.model}</td>
+                      <td className="py-1">{m.promptTokens.toLocaleString()}</td>
+                      <td className="py-1">
+                        {m.completionTokens.toLocaleString()}
+                      </td>
+                      <td className="py-1">{m.totalTokens.toLocaleString()}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+        )}
+      </section>
+    </div>
+  );
+}
+
+function Stat({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-xl border border-line bg-surface p-3">
+      <p className="text-xs text-muted">{label}</p>
+      <p className="mt-1 font-display text-lg text-ink">{value}</p>
     </div>
   );
 }

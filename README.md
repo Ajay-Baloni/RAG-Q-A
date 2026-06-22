@@ -1,6 +1,8 @@
 # AI Document Q&A with RAG
 
-Upload PDFs or paste URLs, then ask questions and get streamed, source-cited answers powered by retrieval-augmented generation (RAG).
+Upload PDFs or paste URLs, then ask questions and get streamed, source-cited answers powered by **agentic** retrieval-augmented generation (RAG).
+
+Instead of a single fixed retrieval step, an LLM agent autonomously decides which tools to call — **multi-step document search**, **web search** (when the docs don't cover it), and a **calculator** — and streams its reasoning steps live before the final cited answer. Each answer reports its **token usage**, aggregated per model on the Account page.
 
 ## Stack
 
@@ -12,7 +14,9 @@ Upload PDFs or paste URLs, then ask questions and get streamed, source-cited ans
 | ORM          | Prisma (raw SQL via `$queryRaw` for vector search)         |
 | File storage | Cloudinary (PDFs)                                          |
 | Embeddings   | Google `gemini-embedding-001` (768-dim)                    |
-| LLM          | Google Gemini 1.5 Flash (primary) → Groq Llama3 (fallback) |
+| LLM          | Google Gemini 2.5 Flash (primary) → Groq Llama3 (fallback) |
+| Agent tools  | Document search · Web search (Tavily) · Calculator         |
+| Web search   | Tavily API (optional, free tier)                           |
 
 ## Monorepo layout
 

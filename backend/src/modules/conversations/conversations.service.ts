@@ -53,7 +53,18 @@ export async function getConversation(userId: string, id: string) {
           role: true,
           content: true,
           modelUsed: true,
+          promptTokens: true,
+          completionTokens: true,
           createdAt: true,
+          steps: {
+            orderBy: { order: 'asc' },
+            select: {
+              order: true,
+              tool: true,
+              input: true,
+              outputSummary: true,
+            },
+          },
           citations: {
             orderBy: { order: 'asc' },
             select: {

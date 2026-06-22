@@ -18,19 +18,28 @@ export function isRateLimit(err: unknown): boolean {
   return msg.includes('429') || /rate limit|quota|resource[_ ]exhausted/i.test(msg);
 }
 
-/** Stream an answer token-by-token. Throws RateLimitError on 429. */
-export async function* streamAnswer(userPrompt: string): AsyncGenerator<string> {
-  let stream: AsyncIterable<{ text: () => string }>;
+export interface LlmUsage {
+  promptTokens: number;
+  completionTokens: number;
+}
+
+/**
+ * Stream an answer token-by-token, returning token usage when the stream ends.
+ * Throws RateLimitError on 429.
+ */
+export async function* streamAnswer(
+  userPrompt: string
+): AsyncGenerator<string, LlmUsage> {
+  let result: Awaited<ReturnType<typeof model.generateContentStream>>;
   try {
-    const result = await model.generateContentStream(userPrompt);
-    stream = result.stream;
+    result = await model.generateContentStream(userPrompt);
   } catch (err) {
     if (isRateLimit(err)) throw new RateLimitError('Gemini rate limited');
     throw err;
   }
 
   try {
-    for await (const chunk of stream) {
+    for await (const chunk of result.stream) {
       const text = chunk.text();
       if (text) yield text;
     }
@@ -38,4 +47,10 @@ export async function* streamAnswer(userPrompt: string): AsyncGenerator<string> 
     if (isRateLimit(err)) throw new RateLimitError('Gemini rate limited');
     throw err;
   }
+
+  const usage = (await result.response).usageMetadata;
+  return {
+    promptTokens: usage?.promptTokenCount ?? 0,
+    completionTokens: usage?.candidatesTokenCount ?? 0,
+  };
 }

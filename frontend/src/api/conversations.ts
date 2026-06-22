@@ -4,6 +4,7 @@ import type {
   Conversation,
   ConversationSummary,
   RetrievedSource,
+  Usage,
 } from "../types";
 
 export function createConversation(documentIds: string[], title?: string) {
@@ -28,8 +29,18 @@ export function deleteConversation(id: string) {
 
 export interface StreamHandlers {
   onSources: (sources: RetrievedSource[]) => void;
+  onStep: (step: {
+    order: number;
+    tool: string;
+    input: Record<string, unknown>;
+  }) => void;
+  onToolResult: (order: number, summary: string) => void;
   onToken: (text: string) => void;
-  onDone: (result: { messageId: string; model: string }) => void;
+  onDone: (result: {
+    messageId: string;
+    model: string;
+    usage: Usage;
+  }) => void;
   onError: (message: string) => void;
 }
 
@@ -40,6 +51,7 @@ export interface StreamHandlers {
 export async function streamQuestion(
   conversationId: string,
   question: string,
+  tools: string[],
   handlers: StreamHandlers,
 ): Promise<void> {
   const res = await fetch(
@@ -50,7 +62,7 @@ export async function streamQuestion(
         "Content-Type": "application/json",
         Authorization: `Bearer ${getToken() ?? ""}`,
       },
-      body: JSON.stringify({ question }),
+      body: JSON.stringify({ question, tools }),
     },
   );
 
@@ -92,11 +104,19 @@ function dispatchEvent(raw: string, handlers: StreamHandlers) {
     case "sources":
       handlers.onSources(payload.sources as RetrievedSource[]);
       break;
+    case "step":
+      handlers.onStep(
+        payload as { order: number; tool: string; input: Record<string, unknown> },
+      );
+      break;
+    case "tool_result":
+      handlers.onToolResult(payload.order as number, payload.summary as string);
+      break;
     case "token":
       handlers.onToken(payload.text as string);
       break;
     case "done":
-      handlers.onDone(payload as { messageId: string; model: string });
+      handlers.onDone(payload as { messageId: string; model: string; usage: Usage });
       break;
     case "error":
       handlers.onError(payload.message as string);

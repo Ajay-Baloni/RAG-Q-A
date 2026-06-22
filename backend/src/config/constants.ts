@@ -6,7 +6,7 @@ export const EMBEDDING_MODEL = "gemini-embedding-001";
 export const EMBEDDING_DIMENSIONS = 768;
 
 /** LLMs. */
-export const GEMINI_MODEL = "gemini-2.0-flash";
+export const GEMINI_MODEL = "gemini-2.5-flash";
 export const GROQ_MODEL = "llama-3.1-8b-instant";
 
 /** Chunking: ~500 token chunks with ~50 token overlap. */
@@ -23,3 +23,6 @@ export const HISTORY_MESSAGE_LIMIT = 6;
 
 /** Upload limits (keep within free-tier + request-time budgets). */
 export const MAX_PDF_BYTES = 10 * 1024 * 1024; // 10 MB
+
+/** Maximum tool-calling turns per agent run. */
+export const MAX_AGENT_STEPS = 5;
