@@ -2,30 +2,51 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Debug server (tsx watch)",
+      "name": "Debug server (compiled, reliable breakpoints)",
       "type": "node",
       "request": "launch",
-      "runtimeExecutable": "${workspaceFolder}/node_modules/.bin/tsx",
-      "runtimeArgs": ["watch"],
-      "program": "${workspaceFolder}/src/server.ts",
+      "preLaunchTask": "build",
+      "program": "${workspaceFolder}/dist/server.js",
       "cwd": "${workspaceFolder}",
-      "console": "integratedTerminal",
-      "internalConsoleOptions": "neverOpen",
-      "skipFiles": ["<node_internals>/**"],
-      "autoAttachChildProcesses": true,
+      "outFiles": ["${workspaceFolder}/dist/**/*.js"],
       "sourceMaps": true,
+      "console": "integratedTerminal",
+      "skipFiles": ["<node_internals>/**"],
       "envFile": "${workspaceFolder}/.env"
     },
     {
       "name": "Debug server (no watch)",
       "type": "node",
       "request": "launch",
-      "runtimeExecutable": "${workspaceFolder}/node_modules/.bin/tsx",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["--import", "tsx"],
       "program": "${workspaceFolder}/src/server.ts",
       "cwd": "${workspaceFolder}",
       "console": "integratedTerminal",
       "skipFiles": ["<node_internals>/**"],
       "sourceMaps": true,
+      "resolveSourceMapLocations": [
+        "${workspaceFolder}/**",
+        "!**/node_modules/**"
+      ],
+      "envFile": "${workspaceFolder}/.env"
+    },
+    {
+      "name": "Debug server (tsx watch)",
+      "type": "node",
+      "request": "launch",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["--import", "tsx", "--watch"],
+      "program": "${workspaceFolder}/src/server.ts",
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen",
+      "skipFiles": ["<node_internals>/**"],
+      "sourceMaps": true,
+      "resolveSourceMapLocations": [
+        "${workspaceFolder}/**",
+        "!**/node_modules/**"
+      ],
       "envFile": "${workspaceFolder}/.env"
     }
   ]

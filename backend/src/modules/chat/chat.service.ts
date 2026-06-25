@@ -1,17 +1,20 @@
-import { prisma } from '../../db/prisma';
-import { AppError } from '../../utils/AppError';
-import { logger } from '../../utils/logger';
-import { embedText } from '../../services/ai/embeddings';
-import { streamWithFallback, type LlmModel } from '../../services/ai/llm';
-import { buildUserPrompt } from '../../services/ai/prompt';
-import { searchSimilarChunks, type RetrievedChunk } from '../../db/vectorSearch';
-import { runAgent, type AgentStep } from '../../services/ai/agent';
-import { getTool, type Tool } from '../../services/ai/tools';
+import { prisma } from "../../db/prisma";
+import { AppError } from "../../utils/AppError";
+import { logger } from "../../utils/logger";
+import { embedText } from "../../services/ai/embeddings";
+import { streamWithFallback, type LlmModel } from "../../services/ai/llm";
+import { buildUserPrompt } from "../../services/ai/prompt";
+import {
+  searchSimilarChunks,
+  type RetrievedChunk,
+} from "../../db/vectorSearch";
+import { runAgent, type AgentStep } from "../../services/ai/agent";
+import { getTool, type Tool } from "../../services/ai/tools";
 import {
   getConversationContext,
   getRecentHistory,
-} from '../conversations/conversations.service';
-import type { TurnMessage } from '../../services/ai/providers/types';
+} from "../conversations/conversations.service";
+import type { TurnMessage } from "../../services/ai/providers/types";
 
 export interface StreamCallbacks {
   /** Retrieved sources. */
@@ -35,7 +38,7 @@ export interface StreamResult {
 }
 
 /** Optional agentic tools the user enabled for this question. */
-const SELECTABLE_TOOLS = ['web_search', 'calculator'] as const;
+const SELECTABLE_TOOLS = ["web_search", "calculator"] as const;
 
 /**
  * RAG chat. With no tools selected it runs classic streamed document RAG
@@ -48,19 +51,21 @@ export async function askStream(
   conversationId: string,
   question: string,
   enabledTools: string[],
-  cb: StreamCallbacks
+  cb: StreamCallbacks,
 ): Promise<StreamResult> {
   const trimmed = question.trim();
-  if (!trimmed) throw AppError.badRequest('Question must not be empty');
+  if (!trimmed) throw AppError.badRequest("Question must not be empty");
 
   const { documentIds } = await getConversationContext(userId, conversationId);
 
   await prisma.message.create({
-    data: { conversationId, role: 'USER', content: trimmed },
+    data: { conversationId, role: "USER", content: trimmed },
   });
 
   // Title the conversation after its first question.
-  const messageCount = await prisma.message.count({ where: { conversationId } });
+  const messageCount = await prisma.message.count({
+    where: { conversationId },
+  });
   if (messageCount === 1) {
     await prisma.conversation.update({
       where: { id: conversationId },
@@ -71,13 +76,21 @@ export async function askStream(
   const history = await getRecentHistory(conversationId);
 
   const agentTools = enabledTools.filter((t) =>
-    SELECTABLE_TOOLS.includes(t as (typeof SELECTABLE_TOOLS)[number])
+    SELECTABLE_TOOLS.includes(t as (typeof SELECTABLE_TOOLS)[number]),
   );
 
   const persisted =
     agentTools.length === 0
       ? await runPlainRag(conversationId, trimmed, documentIds, history, cb)
-      : await runAgentic(conversationId, userId, trimmed, documentIds, history, agentTools, cb);
+      : await runAgentic(
+          conversationId,
+          userId,
+          trimmed,
+          documentIds,
+          history,
+          agentTools,
+          cb,
+        );
 
   return persisted;
 }
@@ -87,8 +100,8 @@ async function runPlainRag(
   conversationId: string,
   question: string,
   documentIds: string[],
-  history: { role: 'USER' | 'ASSISTANT'; content: string }[],
-  cb: StreamCallbacks
+  history: { role: "USER" | "ASSISTANT"; content: string }[],
+  cb: StreamCallbacks,
 ): Promise<StreamResult> {
   const questionEmbedding = await embedText(question);
   const sources = await searchSimilarChunks(questionEmbedding, documentIds);
@@ -96,7 +109,7 @@ async function runPlainRag(
 
   const prompt = buildUserPrompt(question, sources, history);
 
-  let answer = '';
+  let answer = "";
   const gen = streamWithFallback(prompt);
   let res = await gen.next();
   while (!res.done) {
@@ -114,7 +127,7 @@ async function runPlainRag(
     steps: [],
   });
 
-  logger.info('Answer generated (plain RAG)', {
+  logger.info("Answer generated (plain RAG)", {
     conversationId,
     model,
     sources: sources.length,
@@ -129,17 +142,17 @@ async function runAgentic(
   userId: string,
   question: string,
   documentIds: string[],
-  history: { role: 'USER' | 'ASSISTANT'; content: string }[],
+  history: { role: "USER" | "ASSISTANT"; content: string }[],
   agentTools: string[],
-  cb: StreamCallbacks
+  cb: StreamCallbacks,
 ): Promise<StreamResult> {
   const turnHistory: TurnMessage[] = history.map((m) => ({
-    role: m.role === 'USER' ? 'user' : 'assistant',
+    role: m.role === "USER" ? "user" : "assistant",
     content: m.content,
   }));
 
   // Document search is always available in agent mode; add the enabled extras.
-  const tools: Tool[] = [getTool('search_documents')!];
+  const tools: Tool[] = [getTool("search_documents")!];
   for (const name of agentTools) {
     const tool = getTool(name);
     if (tool) tools.push(tool);
@@ -154,7 +167,7 @@ async function runAgentic(
       onStep: (step) => cb.onStep(step),
       onToolResult: (order, summary) => cb.onToolResult(order, summary),
       onToken: (text) => cb.onToken(text),
-    }
+    },
   );
 
   cb.onSources(result.sources);
@@ -167,7 +180,7 @@ async function runAgentic(
     steps: result.steps,
   });
 
-  logger.info('Answer generated (agent)', {
+  logger.info("Answer generated (agent)", {
     conversationId,
     model: result.model,
     steps: result.steps.length,
@@ -189,7 +202,7 @@ function persistAssistant(conversationId: string, input: PersistInput) {
   return prisma.message.create({
     data: {
       conversationId,
-      role: 'ASSISTANT',
+      role: "ASSISTANT",
       content: input.answer,
       modelUsed: input.model,
       promptTokens: input.usage.promptTokens,
@@ -217,7 +230,7 @@ function persistAssistant(conversationId: string, input: PersistInput) {
 function finalize(
   messageId: string,
   model: LlmModel,
-  usage: { promptTokens: number; completionTokens: number }
+  usage: { promptTokens: number; completionTokens: number },
 ): StreamResult {
   return {
     messageId,
